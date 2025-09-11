@@ -1,5 +1,5 @@
 // Minimal Unsplash test - just one request
-const UNSPLASH_ACCESS_KEY = 'hVg9cilZ7J1F_xX7q4xUu19BIs14_btLPPoxJhuzqL4';
+const UNSPLASH_ACCESS_KEY = 'hVg9cilZ7J1F_xX7q4xUu19BIsl4_btLPPoxJhuzqL4';
 
 async function testSingleImage() {
   try {

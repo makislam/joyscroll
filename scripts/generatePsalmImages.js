@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Unsplash API configuration
-const UNSPLASH_ACCESS_KEY = 'hVg9cilZ7J1F_xX7q4xUu19BIs14_btLPPoxJhuzqL4'; // Your Unsplash access key
+const UNSPLASH_ACCESS_KEY = 'hVg9cilZ7J1F_xX7q4xUu19BIsl4_btLPPoxJhuzqL4'; // Your Unsplash access key
 const UNSPLASH_API_BASE = 'https://api.unsplash.com';
 
 // Nature and calming keywords for different psalm themes

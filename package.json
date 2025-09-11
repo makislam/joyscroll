@@ -17,7 +17,8 @@
     "populate-esv-psalms": "node scripts/populateEsvPsalms.js",
     "test-esv-api": "node scripts/testEsvApi.js",
     "fetch-psalm": "node scripts/fetchSinglePsalm.js",
-    "fetch-batch": "node scripts/fetchBatchPsalms.js"
+    "fetch-batch": "node scripts/fetchBatchPsalms.js",
+    "test-unsplash-psalms": "node scripts/testUnsplashPsalms.js"
   },
   "dependencies": {
     "next": "14.0.0",

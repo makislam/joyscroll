@@ -6,7 +6,8 @@ import { Heart, ArrowDown, BookOpen, Share2 } from 'lucide-react'
 import { VerseCardProps } from '@/types'
 import SwipeIndicator from './SwipeIndicator'
 import { shareVerse } from '@/lib/utils'
-import { getPsalmImage } from '@/data/psalmImages'
+import { getPsalmImage, hasUnsplashImage, getAttributionHTML } from '@/data/enhancedPsalmImages'
+import { handleUnsplashImageClick, trackUnsplashDownload } from '@/lib/unsplashCompliance'
 
 export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPassage }: VerseCardProps) {
   const [isDragging, setIsDragging] = useState(false)
@@ -78,6 +79,12 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
     shareVerse(verse)
   }
 
+  const handleImageClick = () => {
+    if (psalmImage && hasUnsplashImage(verse.psalmNumber || 0)) {
+      handleUnsplashImageClick(psalmImage)
+    }
+  }
+
   return (
     <>
       <motion.div
@@ -103,15 +110,23 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
             <img
               src={psalmImage.url}
               alt={psalmImage.description}
-              className={`w-full h-full object-cover transition-opacity duration-500 ${
+              className={`w-full h-full object-cover transition-opacity duration-500 cursor-pointer ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
-              onLoad={() => setImageLoaded(true)}
+              onLoad={() => {
+                setImageLoaded(true)
+                // Track Unsplash download for compliance
+                if (hasUnsplashImage(verse.psalmNumber || 0) && psalmImage.downloadUrl) {
+                  trackUnsplashDownload(psalmImage.downloadUrl)
+                }
+              }}
+              onClick={handleImageClick}
               loading="lazy"
+              title={hasUnsplashImage(verse.psalmNumber || 0) ? 'Click to view on Unsplash' : undefined}
             />
             {/* Image overlay for better text readability */}
-            <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/30 to-black/50" />
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/30 to-black/50 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
           </div>
         )}
         
@@ -144,7 +159,7 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
             Psalm {verse.psalmNumber}:{verse.verseNumber}
           </motion.div>
 
-          {/* Image attribution (small text) */}
+          {/* Enhanced image attribution */}
           {psalmImage && (
             <motion.div 
               className="text-xs text-white/60 mb-4 text-center drop-shadow-sm"
@@ -152,7 +167,20 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
               animate={{ opacity: imageLoaded ? 1 : 0 }}
               transition={{ delay: 0.8 }}
             >
-              📸 {psalmImage.source}
+              {hasUnsplashImage(verse.psalmNumber || 0) && (
+                <span className="inline-block bg-orange-500/20 text-orange-200 px-2 py-1 rounded-full text-xs mr-2 border border-orange-400/30">
+                  ✨ Premium
+                </span>
+              )}
+              📸 {psalmImage.photographer} • {psalmImage.source}
+              {psalmImage.likes && psalmImage.likes > 0 && (
+                <span className="ml-2">❤️ {psalmImage.likes}</span>
+              )}
+              {hasUnsplashImage(verse.psalmNumber || 0) && (
+                <div className="mt-1 text-xs text-white/40">
+                  Click image to view on Unsplash
+                </div>
+              )}
             </motion.div>
           )}
 
