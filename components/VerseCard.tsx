@@ -6,11 +6,16 @@ import { Heart, ArrowDown, BookOpen, Share2 } from 'lucide-react'
 import { VerseCardProps } from '@/types'
 import SwipeIndicator from './SwipeIndicator'
 import { shareVerse } from '@/lib/utils'
+import { getPsalmImage } from '@/data/psalmImages'
 
 export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPassage }: VerseCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [swipeDirection, setSwipeDirection] = useState<'up' | 'down' | null>(null)
   const [swipeProgress, setSwipeProgress] = useState(0)
+  const [imageLoaded, setImageLoaded] = useState(false)
+  
+  // Get the psalm image
+  const psalmImage = verse.psalmNumber ? getPsalmImage(verse.psalmNumber) : null
 
   const cardVariants = {
     initial: { scale: 0.9, opacity: 0 },
@@ -92,13 +97,36 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
         }`}
         style={{ touchAction: 'pan-y' }}
       >
-        {/* Background gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 pointer-events-none" />
+        {/* Background image */}
+        {psalmImage && (
+          <div className="absolute inset-0">
+            <img
+              src={psalmImage.url}
+              alt={psalmImage.description}
+              className={`w-full h-full object-cover transition-opacity duration-500 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              loading="lazy"
+            />
+            {/* Image overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/30 to-black/50" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+          </div>
+        )}
+        
+        {/* Fallback gradient when no image */}
+        {!psalmImage && (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-400/40 to-primary-600/60" />
+        )}
+        
+        {/* Glass effect overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 pointer-events-none backdrop-blur-sm" />
         
         <div className="relative z-10">
           {/* Verse text */}
           <motion.p 
-            className="verse-text mb-6 leading-relaxed"
+            className="verse-text mb-6 leading-relaxed text-white drop-shadow-lg"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -108,13 +136,25 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
           
           {/* Verse reference */}
           <motion.div 
-            className="verse-reference mb-8 text-center"
+            className="verse-reference mb-8 text-center text-white/90 drop-shadow-md"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
             Psalm {verse.psalmNumber}:{verse.verseNumber}
           </motion.div>
+
+          {/* Image attribution (small text) */}
+          {psalmImage && (
+            <motion.div 
+              className="text-xs text-white/60 mb-4 text-center drop-shadow-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: imageLoaded ? 1 : 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              📸 {psalmImage.source}
+            </motion.div>
+          )}
 
           {/* Action buttons */}
           <motion.div 
@@ -129,14 +169,14 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
               whileTap="tap"
               whileHover="hover"
               onClick={onLike}
-              className={`flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 ${
+              className={`flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 backdrop-blur-sm ${
                 isLiked 
-                  ? 'bg-red-500 text-white shadow-lg' 
-                  : 'glass-effect hover:bg-red-50 text-red-500'
+                  ? 'bg-red-500/90 text-white shadow-lg border border-red-400/50' 
+                  : 'bg-white/20 hover:bg-red-50/30 text-white border border-white/30 hover:border-red-300/50'
               }`}
             >
               <Heart 
-                className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`}
+                className={`w-6 h-6 ${isLiked ? 'fill-current' : ''} drop-shadow-sm`}
               />
             </motion.button>
 
@@ -146,9 +186,9 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
               whileTap="tap"
               whileHover="hover"
               onClick={onReadFullPassage}
-              className="flex items-center justify-center w-14 h-14 rounded-full glass-effect hover:bg-primary-50 text-primary-600 transition-all duration-300"
+              className="flex items-center justify-center w-14 h-14 rounded-full bg-white/20 hover:bg-blue-50/30 text-white border border-white/30 hover:border-blue-300/50 transition-all duration-300 backdrop-blur-sm"
             >
-              <BookOpen className="w-6 h-6" />
+              <BookOpen className="w-6 h-6 drop-shadow-sm" />
             </motion.button>
 
             {/* Share button */}
@@ -157,9 +197,9 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
               whileTap="tap"
               whileHover="hover"
               onClick={handleShare}
-              className="flex items-center justify-center w-14 h-14 rounded-full glass-effect hover:bg-green-50 text-green-600 transition-all duration-300"
+              className="flex items-center justify-center w-14 h-14 rounded-full bg-white/20 hover:bg-green-50/30 text-white border border-white/30 hover:border-green-300/50 transition-all duration-300 backdrop-blur-sm"
             >
-              <Share2 className="w-6 h-6" />
+              <Share2 className="w-6 h-6 drop-shadow-sm" />
             </motion.button>
           </motion.div>
 
@@ -172,15 +212,15 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
           >
             <motion.button
               onClick={onNext}
-              className="flex flex-col items-center text-slate-400 hover:text-slate-600 transition-colors group"
+              className="flex flex-col items-center text-white/80 hover:text-white transition-colors group"
               whileHover={{ y: -2 }}
             >
-              <span className="text-sm mb-2 font-medium">Swipe up for next verse</span>
+              <span className="text-sm mb-2 font-medium drop-shadow-sm">Swipe up for next verse</span>
               <motion.div
                 animate={{ y: [0, 5, 0] }}
                 transition={{ repeat: Infinity, duration: 1.5 }}
               >
-                <ArrowDown className="w-5 h-5 group-hover:text-primary-500 transition-colors" />
+                <ArrowDown className="w-5 h-5 group-hover:text-white transition-colors drop-shadow-sm" />
               </motion.div>
             </motion.button>
           </motion.div>

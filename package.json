@@ -10,7 +10,14 @@
     "generate-psalms": "node scripts/generatePsalms.js",
     "generate-psalms-free": "node scripts/generatePsalmsFree.js",
     "generate-sample": "node scripts/generateSample.js",
-    "generate-all-psalms": "node scripts/generateAllPsalms.js"
+    "generate-all-psalms": "node scripts/generateAllPsalms.js",
+    "generate-psalm-images": "node scripts/generatePsalmImages.js",
+    "generate-curated-images": "node scripts/generateCuratedImages.js",
+    "generate-picsum-images": "node scripts/generatePicsumImages.js",
+    "populate-esv-psalms": "node scripts/populateEsvPsalms.js",
+    "test-esv-api": "node scripts/testEsvApi.js",
+    "fetch-psalm": "node scripts/fetchSinglePsalm.js",
+    "fetch-batch": "node scripts/fetchBatchPsalms.js"
   },
   "dependencies": {
     "next": "14.0.0",
