@@ -18,18 +18,26 @@ export const metadata = {
   description: 'Discover verses from the Psalms in a beautiful, TikTok-like experience',
   keywords: ['psalms', 'bible', 'verses', 'scripture', 'christian', 'faith'],
   authors: [{ name: 'JoyScroll' }],
+  manifest: '/manifest.json',
   viewport: {
     width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
     userScalable: false,
   },
-  themeColor: '#0ea5e9',
+  themeColor: '#667eea',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'JoyScroll',
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
+    'msapplication-tap-highlight': 'no',
+    'msapplication-TileColor': '#667eea',
+  }
 }
 
 export default function RootLayout({

@@ -7,6 +7,7 @@ import Navigation from '@/components/Navigation'
 import LikedVerses from '@/components/LikedVerses'
 import FullPassageModal from '@/components/FullPassageModal'
 import SettingsModal from '@/components/SettingsModal'
+import FullscreenExitButton from '@/components/FullscreenExitButton'
 import { psalmsData } from '@/data/psalms'
 import { Verse } from '@/types'
 import { saveLikedVerses, loadLikedVerses, saveRecentlyShown, loadRecentlyShown, clearLikedVerses } from '@/lib/storage'
@@ -178,6 +179,9 @@ export default function Home() {
         likedCount={likedVerses.size}
         onSettingsClick={() => setShowSettings(true)}
       />
+      
+      {/* Floating Exit Fullscreen Button */}
+      <FullscreenExitButton />
       
       {currentTab === 'discover' ? (
         <main className="flex-1 flex items-center justify-center relative overflow-hidden">

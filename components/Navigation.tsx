@@ -1,7 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { BookMarked, Heart, Home, Settings } from 'lucide-react'
+import { BookMarked, Heart, Home, Settings, Maximize, Minimize } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { isFullscreenSupported, isCurrentlyFullscreen, toggleFullscreen } from '@/lib/utils'
 
 interface NavigationProps {
   currentTab: 'discover' | 'liked'
@@ -11,6 +13,42 @@ interface NavigationProps {
 }
 
 export default function Navigation({ currentTab, onTabChange, likedCount, onSettingsClick }: NavigationProps) {
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [fullscreenSupported, setFullscreenSupported] = useState(false)
+
+  useEffect(() => {
+    // Check if fullscreen is supported
+    setFullscreenSupported(isFullscreenSupported())
+    
+    // Check initial fullscreen state
+    setIsFullscreen(isCurrentlyFullscreen())
+
+    // Listen for fullscreen changes
+    const handleFullscreenChange = () => {
+      setIsFullscreen(isCurrentlyFullscreen())
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange)
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
+    }
+  }, [])
+
+  const handleFullscreenToggle = async () => {
+    try {
+      await toggleFullscreen()
+    } catch (error) {
+      console.error('Failed to toggle fullscreen:', error)
+    }
+  }
+
   return (
     <motion.nav 
       className="glass-effect border-b border-white/20 p-4"
@@ -19,9 +57,9 @@ export default function Navigation({ currentTab, onTabChange, likedCount, onSett
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-md mx-auto">
-        {/* Logo */}
+        {/* Logo Section - Hidden in fullscreen */}
         <motion.div 
-          className="flex items-center justify-between mb-6"
+          className="flex items-center justify-between mb-6 logo-section-hidden"
         >
           <motion.div 
             className="flex items-center space-x-3"
@@ -38,19 +76,39 @@ export default function Navigation({ currentTab, onTabChange, likedCount, onSett
             </div>
           </motion.div>
 
-          {/* Settings Button */}
-          <motion.button
-            onClick={onSettingsClick}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            className="p-2 rounded-full glass-effect text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-colors"
-          >
-            <Settings className="w-5 h-5" />
-          </motion.button>
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2">
+            {/* Fullscreen Button - Only show if supported */}
+            {fullscreenSupported && (
+              <motion.button
+                onClick={handleFullscreenToggle}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-2 rounded-full glass-effect text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              >
+                {isFullscreen ? (
+                  <Minimize className="w-5 h-5" />
+                ) : (
+                  <Maximize className="w-5 h-5" />
+                )}
+              </motion.button>
+            )}
+
+            {/* Settings Button */}
+            <motion.button
+              onClick={onSettingsClick}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-full glass-effect text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+            </motion.button>
+          </div>
         </motion.div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center justify-center space-x-4">
+        {/* Tab Navigation - Always visible, compact in fullscreen */}
+        <div className={`flex items-center justify-center space-x-4 navigation-compact`}>
           <motion.button
             onClick={() => onTabChange('discover')}
             className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 ${
