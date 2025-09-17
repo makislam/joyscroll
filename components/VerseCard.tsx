@@ -255,11 +255,6 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
                 animate={{ opacity: imageLoaded ? 1 : 0 }}
                 transition={{ delay: 0.8 }}
               >
-                {psalmImage.source === 'unsplash' && (
-                  <span className="inline-block bg-orange-500/20 text-orange-200 px-2 py-1 rounded-full text-xs mr-2 border border-orange-400/30">
-                    {psalmImage.isLive ? '🔥 Live' : '✨ Premium'}
-                  </span>
-                )}
                 📸 {psalmImage.source === 'unsplash' ? (
                   <button 
                     onClick={handlePhotographerClick}
