@@ -59,7 +59,7 @@ export default function Navigation({ currentTab, onTabChange, likedCount, onSett
       <div className="max-w-md mx-auto">
         {/* Logo Section - Hidden in fullscreen */}
         <motion.div 
-          className="flex items-center justify-between mb-6 logo-section-hidden"
+          className="flex items-center justify-between mb-2 logo-section-hidden"
         >
           <motion.div 
             className="flex items-center space-x-3"

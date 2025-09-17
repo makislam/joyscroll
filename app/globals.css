@@ -39,11 +39,11 @@
     @apply bg-white/90 backdrop-blur-lg border border-white/30 shadow-2xl rounded-2xl;
     /* Instagram Reel-like dimensions */
     width: calc(100vw - 24px);
-    height: calc(100vh - 220px);
+    height: calc(100vh - 180px);
     min-height: 500px;
     max-width: 450px;
-    max-height: calc(100vh - 220px);
-    margin: 16px auto 32px auto;
+    max-height: calc(100vh - 180px);
+    margin: 8px auto 32px auto;
     position: relative;
   }
 
@@ -51,10 +51,10 @@
   @media (max-width: 430px) and (min-height: 800px) {
     .verse-card-reel {
       width: calc(100vw - 20px);
-      height: calc(100vh - 240px);
+      height: calc(100vh - 200px);
       min-height: 400px;
-      margin: 12px auto 40px auto;
-      max-height: calc(100vh - 240px);
+      margin: 6px auto 40px auto;
+      max-height: calc(100vh - 200px);
     }
   }
 
@@ -62,10 +62,10 @@
   @media (max-width: 360px) {
     .verse-card-reel {
       width: calc(100vw - 12px);
-      height: calc(100vh - 200px);
+      height: calc(100vh - 160px);
       min-height: 350px;
-      margin: 6px auto 30px auto;
-      max-height: calc(100vh - 200px);
+      margin: 4px auto 30px auto;
+      max-height: calc(100vh - 160px);
     }
   }
 
@@ -73,10 +73,10 @@
   @media (max-width: 480px) {
     .verse-card-reel {
       width: calc(100vw - 16px);
-      height: calc(100vh - 220px);
+      height: calc(100vh - 180px);
       min-height: 400px;
-      margin: 8px auto 36px auto;
-      max-height: calc(100vh - 220px);
+      margin: 4px auto 36px auto;
+      max-height: calc(100vh - 180px);
     }
   }
 
