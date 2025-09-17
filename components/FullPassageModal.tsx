@@ -55,11 +55,11 @@ export default function FullPassageModal({
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+        className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
           <div>
             <h2 className="text-xl font-semibold text-slate-800">Psalm {psalm.number}</h2>
             <p className="text-sm text-slate-600 mt-1">{psalm.title}</p>
@@ -81,7 +81,7 @@ export default function FullPassageModal({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="flex-1 overflow-y-auto min-h-0 p-6">
           <div className="space-y-4">
             {(showingFullChapter ? psalm.verses : psalm.verses.slice(0, 3)).map((verse, index) => {
               const isCurrentVerse = currentVerseNumber === verse.verseNumber
@@ -129,7 +129,7 @@ export default function FullPassageModal({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-200 bg-slate-50">
+        <div className="p-6 border-t border-slate-200 bg-slate-50 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="text-sm text-slate-600">
               {showingFullChapter ? `${psalm.verses.length} verses` : `Showing ${Math.min(3, psalm.verses.length)} of ${psalm.verses.length} verses`}

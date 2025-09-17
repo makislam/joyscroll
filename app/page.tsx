@@ -256,7 +256,7 @@ export default function Home() {
       <FullscreenExitButton />
       
       {currentTab === 'discover' ? (
-        <main className="flex-1 flex items-center justify-center relative overflow-hidden">
+        <main className="flex-1 flex items-center justify-center relative overflow-hidden px-2 py-2">
           {/* Background decorative elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary-200/20 rounded-full blur-3xl animate-pulse-slow" />
