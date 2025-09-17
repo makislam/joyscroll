@@ -11,6 +11,7 @@ import FullscreenExitButton from '@/components/FullscreenExitButton'
 import { psalmsData } from '@/data/psalms'
 import { Verse } from '@/types'
 import { saveLikedVerses, loadLikedVerses, saveRecentlyShown, loadRecentlyShown, clearLikedVerses } from '@/lib/storage'
+import { getQualityVerses, getWeightedRandomVerse } from '@/lib/verseSelection'
 
 export default function Home() {
   const [currentVerse, setCurrentVerse] = useState<Verse | null>(null)
@@ -28,7 +29,10 @@ export default function Home() {
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1) // -1 = current verse, 0+ = history positions
   const [liveVerse, setLiveVerse] = useState<Verse | null>(null) // The actual current verse when not browsing history
 
-  // Create a flat array of all verses for better randomization
+  // Get high-quality complete verses on component load
+  const [qualityVerses] = useState(() => getQualityVerses(psalmsData))
+  
+  // Create a flat array of all verses for backward compatibility with liked verses
   const allVerses = psalmsData.flatMap(psalm => 
     psalm.verses.map(verse => ({
       ...verse,
@@ -67,35 +71,54 @@ export default function Home() {
     if (currentHistoryIndex === -1) {
       setIsLoading(true)
       
-      // Filter out recently shown verses to avoid repetition
-      const availableVerses = allVerses.filter(verse => !recentlyShown.has(verse.id))
-      
-      // If we've shown too many verses, reset the recently shown list but keep some
-      if (availableVerses.length < 5) {
-        const versesToKeep = Array.from(recentlyShown).slice(-10) // Keep last 10
-        const resetSet = new Set(versesToKeep)
-        setRecentlyShown(resetSet)
-        saveRecentlyShown(resetSet)
-      }
-      
-      // Use crypto.getRandomValues for better randomness
-      const getSecureRandom = () => {
-        const array = new Uint32Array(1)
-        crypto.getRandomValues(array)
-        return array[0] / (0xffffffff + 1)
-      }
-      
       // Simulate loading for smooth transition
       setTimeout(() => {
-        const versesToChooseFrom = availableVerses.length > 0 ? availableVerses : allVerses
-        const randomIndex = Math.floor(getSecureRandom() * versesToChooseFrom.length)
-        const selectedVerse = versesToChooseFrom[randomIndex]
+        // Use the new intelligent verse selection
+        const selectedVerse = getWeightedRandomVerse(qualityVerses, recentlyShown)
+        
+        if (!selectedVerse) {
+          // Fallback to original method if no quality verses available
+          const availableVerses = allVerses.filter(verse => !recentlyShown.has(verse.id))
+          const versesToChooseFrom = availableVerses.length > 0 ? availableVerses : allVerses
+          
+          const getSecureRandom = () => {
+            const array = new Uint32Array(1)
+            crypto.getRandomValues(array)
+            return array[0] / (0xffffffff + 1)
+          }
+          
+          const randomIndex = Math.floor(getSecureRandom() * versesToChooseFrom.length)
+          const fallbackVerse = versesToChooseFrom[randomIndex]
+          
+          setRecentlyShown(prev => {
+            const newSet = new Set(prev)
+            newSet.add(fallbackVerse.id)
+            saveRecentlyShown(newSet)
+            return newSet
+          })
+          
+          if (liveVerse) {
+            setPsalmHistory(prev => [liveVerse, ...prev].slice(0, 5))
+          }
+          
+          setCurrentVerse(fallbackVerse)
+          setLiveVerse(fallbackVerse)
+          setCurrentHistoryIndex(-1)
+          setIsLoading(false)
+          return
+        }
         
         // Add to recently shown
         setRecentlyShown(prev => {
           const newSet = new Set(prev)
           newSet.add(selectedVerse.id)
-          // Save to localStorage
+          // Keep the recently shown list manageable
+          if (newSet.size > 50) {
+            const recentArray = Array.from(newSet).slice(-30)
+            const trimmedSet = new Set(recentArray)
+            saveRecentlyShown(trimmedSet)
+            return trimmedSet
+          }
           saveRecentlyShown(newSet)
           return newSet
         })
