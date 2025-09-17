@@ -17,5 +17,7 @@ export interface VerseCardProps {
   isLiked: boolean
   onLike: () => void
   onNext: () => void
+  onPrevious: () => void
   onReadFullPassage?: () => void
+  canGoBack?: boolean
 }

@@ -44,7 +44,11 @@ export default function FullscreenExitButton() {
   return (
     <motion.button
       onClick={handleExitFullscreen}
-      className="fixed top-5 right-5 z-[1000] bg-black bg-opacity-70 backdrop-blur-lg text-white border border-white border-opacity-20 rounded-full w-12 h-12 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-opacity-90 hover:scale-110"
+      className="fixed z-[1000] bg-black bg-opacity-70 backdrop-blur-lg text-white border border-white border-opacity-20 rounded-full w-12 h-12 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-opacity-90 hover:scale-110"
+      style={{
+        top: `max(20px, env(safe-area-inset-top, 20px))`,
+        right: `max(20px, env(safe-area-inset-right, 20px))`
+      }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
       title="Exit Fullscreen"

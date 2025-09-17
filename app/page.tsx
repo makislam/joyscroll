@@ -22,6 +22,11 @@ export default function Home() {
   const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showingFullChapter, setShowingFullChapter] = useState(false)
+  
+  // History tracking for backward navigation - simple 5-item sliding window
+  const [psalmHistory, setPsalmHistory] = useState<Verse[]>([])
+  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1) // -1 = current verse, 0+ = history positions
+  const [liveVerse, setLiveVerse] = useState<Verse | null>(null) // The actual current verse when not browsing history
 
   // Create a flat array of all verses for better randomization
   const allVerses = psalmsData.flatMap(psalm => 
@@ -44,9 +49,12 @@ export default function Home() {
 
     // Add keyboard navigation
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === ' ') {
+      if (event.key === 'ArrowUp' || event.key === ' ') {
         event.preventDefault()
-        getRandomVerse()
+        getRandomVerse() // Forward navigation
+      } else if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        goToPreviousVerse() // Backward navigation
       }
     }
 
@@ -55,44 +63,104 @@ export default function Home() {
   }, [])
 
   const getRandomVerse = () => {
-    setIsLoading(true)
-    
-    // Filter out recently shown verses to avoid repetition
-    const availableVerses = allVerses.filter(verse => !recentlyShown.has(verse.id))
-    
-    // If we've shown too many verses, reset the recently shown list but keep some
-    if (availableVerses.length < 5) {
-      const versesToKeep = Array.from(recentlyShown).slice(-10) // Keep last 10
-      const resetSet = new Set(versesToKeep)
-      setRecentlyShown(resetSet)
-      saveRecentlyShown(resetSet)
-    }
-    
-    // Use crypto.getRandomValues for better randomness
-    const getSecureRandom = () => {
-      const array = new Uint32Array(1)
-      crypto.getRandomValues(array)
-      return array[0] / (0xffffffff + 1)
-    }
-    
-    // Simulate loading for smooth transition
-    setTimeout(() => {
-      const versesToChooseFrom = availableVerses.length > 0 ? availableVerses : allVerses
-      const randomIndex = Math.floor(getSecureRandom() * versesToChooseFrom.length)
-      const selectedVerse = versesToChooseFrom[randomIndex]
+    // Only get new verse if we're showing the current verse (not browsing history)
+    if (currentHistoryIndex === -1) {
+      setIsLoading(true)
       
-      // Add to recently shown
-      setRecentlyShown(prev => {
-        const newSet = new Set(prev)
-        newSet.add(selectedVerse.id)
-        // Save to localStorage
-        saveRecentlyShown(newSet)
-        return newSet
-      })
+      // Filter out recently shown verses to avoid repetition
+      const availableVerses = allVerses.filter(verse => !recentlyShown.has(verse.id))
       
-      setCurrentVerse(selectedVerse)
-      setIsLoading(false)
-    }, 300)
+      // If we've shown too many verses, reset the recently shown list but keep some
+      if (availableVerses.length < 5) {
+        const versesToKeep = Array.from(recentlyShown).slice(-10) // Keep last 10
+        const resetSet = new Set(versesToKeep)
+        setRecentlyShown(resetSet)
+        saveRecentlyShown(resetSet)
+      }
+      
+      // Use crypto.getRandomValues for better randomness
+      const getSecureRandom = () => {
+        const array = new Uint32Array(1)
+        crypto.getRandomValues(array)
+        return array[0] / (0xffffffff + 1)
+      }
+      
+      // Simulate loading for smooth transition
+      setTimeout(() => {
+        const versesToChooseFrom = availableVerses.length > 0 ? availableVerses : allVerses
+        const randomIndex = Math.floor(getSecureRandom() * versesToChooseFrom.length)
+        const selectedVerse = versesToChooseFrom[randomIndex]
+        
+        // Add to recently shown
+        setRecentlyShown(prev => {
+          const newSet = new Set(prev)
+          newSet.add(selectedVerse.id)
+          // Save to localStorage
+          saveRecentlyShown(newSet)
+          return newSet
+        })
+        
+        // Add current verse to history before showing new one (if there is a current verse)
+        if (liveVerse) {
+          setPsalmHistory(prev => {
+            const newHistory = [liveVerse, ...prev]
+            return newHistory.slice(0, 5) // Keep only last 5 verses
+          })
+        }
+        
+        setCurrentVerse(selectedVerse)
+        setLiveVerse(selectedVerse) // Update the live verse
+        setCurrentHistoryIndex(-1) // Reset to current verse position
+        setIsLoading(false)
+      }, 300)
+    } else {
+      // If browsing history, move forward to newer verses or current verse
+      goToNextVerse()
+    }
+  }
+
+  const goToPreviousVerse = () => {
+    console.log('goToPreviousVerse called', { currentHistoryIndex, historyLength: psalmHistory.length })
+    if (currentHistoryIndex === -1) {
+      // Currently showing current verse, move to most recent history item
+      if (psalmHistory.length > 0) {
+        console.log('Moving from current verse to history[0]')
+        setCurrentVerse(psalmHistory[0])
+        setCurrentHistoryIndex(0)
+      } else {
+        console.log('No history available to go back to')
+      }
+    } else {
+      // Currently in history, move deeper into history
+      const newIndex = Math.min(currentHistoryIndex + 1, psalmHistory.length - 1)
+      if (newIndex !== currentHistoryIndex && newIndex < psalmHistory.length) {
+        console.log('Moving deeper in history to index', newIndex)
+        setCurrentVerse(psalmHistory[newIndex])
+        setCurrentHistoryIndex(newIndex)
+      } else {
+        console.log('Already at deepest history position')
+      }
+    }
+  }
+
+  const goToNextVerse = () => {
+    console.log('goToNextVerse called', { currentHistoryIndex, historyLength: psalmHistory.length })
+    if (currentHistoryIndex === -1) {
+      // Already at current verse, generate new verse
+      console.log('Generating new verse from current position')
+      getRandomVerse()
+    } else if (currentHistoryIndex > 0) {
+      // In history, move to more recent history item
+      const newIndex = currentHistoryIndex - 1
+      console.log('Moving to more recent history index', newIndex)
+      setCurrentVerse(psalmHistory[newIndex])
+      setCurrentHistoryIndex(newIndex)
+    } else {
+      // At most recent history item (index 0), go back to live verse
+      console.log('Returning to live verse from history[0]')
+      setCurrentVerse(liveVerse)
+      setCurrentHistoryIndex(-1)
+    }
   }
 
   // Get liked verses as an array for the liked verses component
@@ -166,6 +234,10 @@ export default function Home() {
     getRandomVerse()
   }
 
+  const handlePrevious = () => {
+    goToPreviousVerse()
+  }
+
   const handleContinueReading = () => {
     // Simply get a new random verse from any Psalm (this makes "Continue Reading" go to a different verse/Psalm)
     getRandomVerse()
@@ -217,7 +289,9 @@ export default function Home() {
                   isLiked={likedVerses.has(currentVerse.id)}
                   onLike={() => handleLike(currentVerse.id)}
                   onNext={handleNext}
+                  onPrevious={handlePrevious}
                   onReadFullPassage={() => handleReadFullPassage(currentVerse)}
+                  canGoBack={psalmHistory.length > 0}
                 />
               </motion.div>
             ) : null}

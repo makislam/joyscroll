@@ -9,7 +9,7 @@ import { shareVerse } from '@/lib/utils'
 import { trackUnsplashDownload, getUnsplashAttribution } from '@/lib/unsplashCompliance'
 import { PsalmImageManager, PsalmImageData } from '../lib/psalmImageManager'
 
-export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPassage }: VerseCardProps) {
+export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, onReadFullPassage, canGoBack = false }: VerseCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [swipeDirection, setSwipeDirection] = useState<'up' | 'down' | null>(null)
   const [swipeProgress, setSwipeProgress] = useState(0)
@@ -98,9 +98,13 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
     if (info.offset.y < -swipeThreshold || info.velocity.y < -velocityThreshold) {
       onNext()
     }
-    // Optional: Swipe down to refresh/get random verse
+    // Swipe down to go back in history (if possible)
     else if (info.offset.y > swipeThreshold || info.velocity.y > velocityThreshold) {
-      onNext() // For now, both directions go to next verse
+      if (canGoBack) {
+        onPrevious()
+      } else {
+        onNext() // Fallback to next if can't go back
+      }
     }
   }
 
@@ -322,19 +326,39 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onReadFullPa
               animate={{ opacity: isDragging ? 0.3 : 1 }}
               transition={{ delay: 0.6 }}
             >
-              <motion.button
-                onClick={onNext}
-                className="flex flex-col items-center text-white/80 hover:text-white transition-colors group"
-                whileHover={{ y: -2 }}
+              <motion.div
+                className="flex flex-col items-center text-white/80 text-center"
               >
-                <span className="text-sm mb-2 font-medium drop-shadow-sm">Swipe up for next verse</span>
-                <motion.div
-                  animate={{ y: [0, 5, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  <ArrowDown className="w-5 h-5 group-hover:text-white transition-colors drop-shadow-sm" />
-                </motion.div>
-              </motion.button>
+                <div className="flex items-center space-x-4 mb-2">
+                  {canGoBack && (
+                    <div className="flex flex-col items-center">
+                      <motion.div
+                        animate={{ y: [-2, 3, -2] }}
+                        transition={{ repeat: Infinity, duration: 1.5 }}
+                      >
+                        <ArrowDown className="w-4 h-4 rotate-180 drop-shadow-sm" />
+                      </motion.div>
+                      <span className="text-xs font-medium drop-shadow-sm">Back</span>
+                    </div>
+                  )}
+                  
+                  <motion.button
+                    onClick={onNext}
+                    className="flex flex-col items-center group"
+                    whileHover={{ y: -2 }}
+                  >
+                    <span className="text-sm mb-2 font-medium drop-shadow-sm">
+                      {canGoBack ? 'Swipe up/down to navigate' : 'Swipe up for next verse'}
+                    </span>
+                    <motion.div
+                      animate={{ y: [0, 5, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.5 }}
+                    >
+                      <ArrowDown className="w-5 h-5 group-hover:text-white transition-colors drop-shadow-sm" />
+                    </motion.div>
+                  </motion.button>
+                </div>
+              </motion.div>
             </motion.div>
           </div>
         </div>
