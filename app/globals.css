@@ -34,22 +34,33 @@
     @apply bg-white/90 backdrop-blur-lg border border-white/30 shadow-2xl rounded-2xl;
     /* Instagram Reel-like dimensions */
     width: calc(100vw - 24px);
-    height: calc(100vh - 160px);
+    height: calc(100vh - 180px);
     min-height: 500px;
     max-width: 450px;
-    max-height: calc(100vh - 160px);
-    margin: 12px auto 20px auto;
+    max-height: calc(100vh - 180px);
+    margin: 12px auto 24px auto;
     position: relative;
+  }
+
+  /* Very small screens (older phones) */
+  @media (max-width: 360px) {
+    .verse-card-reel {
+      width: calc(100vw - 12px);
+      height: calc(100vh - 200px);
+      min-height: 350px;
+      margin: 6px auto 30px auto;
+      max-height: calc(100vh - 200px);
+    }
   }
 
   /* Extra small screens */
   @media (max-width: 480px) {
     .verse-card-reel {
       width: calc(100vw - 16px);
-      height: calc(100vh - 140px);
-      min-height: 450px;
-      margin: 8px auto 16px auto;
-      max-height: calc(100vh - 140px);
+      height: calc(100vh - 180px);
+      min-height: 400px;
+      margin: 8px auto 24px auto;
+      max-height: calc(100vh - 180px);
     }
   }
 
