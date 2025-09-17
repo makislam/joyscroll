@@ -6,6 +6,8 @@
 @layer base {
   html {
     font-family: Inter, system-ui, sans-serif;
+    overflow: hidden; /* Prevent page scrolling */
+    height: 100vh;
   }
   
   body {
@@ -13,6 +15,9 @@
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     touch-action: manipulation;
+    overflow: hidden; /* Prevent page scrolling */
+    height: 100vh;
+    width: 100vw;
   }
 
   * {
@@ -25,15 +30,76 @@
     @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-xl rounded-3xl;
   }
   
+  .verse-card-reel {
+    @apply bg-white/90 backdrop-blur-lg border border-white/30 shadow-2xl rounded-2xl;
+    /* Instagram Reel-like dimensions */
+    width: calc(100vw - 24px);
+    height: calc(100vh - 160px);
+    min-height: 500px;
+    max-width: 450px;
+    max-height: calc(100vh - 160px);
+    margin: 12px auto 20px auto;
+    position: relative;
+  }
+
+  /* Extra small screens */
+  @media (max-width: 480px) {
+    .verse-card-reel {
+      width: calc(100vw - 16px);
+      height: calc(100vh - 140px);
+      min-height: 450px;
+      margin: 8px auto 16px auto;
+      max-height: calc(100vh - 140px);
+    }
+  }
+
+  /* Responsive adjustments for larger screens */
+  @media (min-width: 768px) {
+    .verse-card-reel {
+      width: 90vw;
+      max-width: 400px;
+      height: calc(100vh - 160px);
+      margin: 0 auto 20px auto;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .verse-card-reel {
+      max-width: 420px;
+      height: calc(100vh - 180px);
+      margin: 0 auto 20px auto;
+    }
+  }
+
+  /* Scrollable verse text container */
+  .verse-text-container {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer and Edge */
+  }
+
+  .verse-text-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Opera */
+  }
+
+  /* Hide scrollbars utility class */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
   .glass-effect {
     @apply bg-white/10 backdrop-blur-md border border-white/20;
   }
   
   .verse-text {
-    @apply font-serif text-lg leading-relaxed text-slate-700;
+    @apply font-serif text-xl leading-relaxed text-white drop-shadow-lg;
   }
   
   .verse-reference {
-    @apply font-medium text-primary-600 text-sm tracking-wide;
+    @apply font-medium text-white/90 text-base tracking-wide drop-shadow-md;
   }
 }

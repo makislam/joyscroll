@@ -8,15 +8,17 @@ export async function trackUnsplashDownload(downloadUrl: string) {
   if (!downloadUrl) return;
   
   try {
+    console.log('🔥 Tracking Unsplash download:', downloadUrl);
     // This endpoint is required by Unsplash to track image usage
-    await fetch(downloadUrl, {
+    const response = await fetch(downloadUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
       }
     });
+    console.log('✅ Unsplash download tracked successfully:', response.status);
   } catch (error) {
-    console.warn('Failed to track Unsplash download:', error);
+    console.warn('❌ Failed to track Unsplash download:', error);
   }
 }
 
@@ -30,12 +32,27 @@ export function getUnsplashAttribution(image: any, appName: string = 'JoyScroll'
     utm_campaign: 'api-credit'
   });
   
-  return {
-    photoUrl: `${image.photographerUrl}?${utmParams.toString()}`,
+  // Use the photo ID to create a direct link to the photo instead of profile
+  // This is more reliable than photographer profile URLs which can change
+  const photoId = image.id || extractPhotoIdFromUrl(image.url);
+  
+  const attribution = {
+    photoUrl: `https://unsplash.com/photos/${photoId}?${utmParams.toString()}`,
+    photographerUrl: `${image.photographerUrl}?${utmParams.toString()}`,
     unsplashUrl: `https://unsplash.com/?${utmParams.toString()}`,
     photographerName: image.photographer,
-    photoId: image.id
+    photoId: photoId
   };
+  
+  console.log('🔗 Generated Unsplash attribution URLs:', attribution);
+  
+  return attribution;
+}
+
+// Helper function to extract photo ID from Unsplash URL
+function extractPhotoIdFromUrl(url: string): string {
+  const match = url.match(/photo-(\w+)/);
+  return match ? match[1] : '';
 }
 
 // Generate compliant attribution HTML

@@ -180,7 +180,7 @@ export default function Home() {
       />
       
       {currentTab === 'discover' ? (
-        <main className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
+        <main className="flex-1 flex items-center justify-center relative overflow-hidden">
           {/* Background decorative elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary-200/20 rounded-full blur-3xl animate-pulse-slow" />
@@ -206,7 +206,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -50 }}
-                className="w-full max-w-md"
+                className="w-full h-full flex items-center justify-center"
               >
                 <VerseCard
                   verse={currentVerse}
@@ -253,6 +253,9 @@ export default function Home() {
         onImport={handleImportLikedVerses}
         onClearAll={handleClearAllData}
       />
+
+      {/* Image Test Panel (Development Only) */}
+      {/* Development features temporarily disabled */}
     </div>
   )
 }

@@ -77,7 +77,7 @@ const unsplashImages: Record<number, PsalmImage> = {
     color: "#405940"
   },
   27: {
-    id: "luca-lighthouse",
+    id: "F5kcCJjGBYE",
     url: "https://images.unsplash.com/photo-1722197230024-f5bcb12b70c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MDMzMjV8MHwxfHNlYXJjaHwxfHxicmlnaHQlMjBsaWdodCUyQyUyMGxpZ2h0aG91c2UlMkMlMjBzYWx2YXRpb258ZW58MHwwfHx8MTc1NzYyMTc3M3ww&ixlib=rb-4.1.0&q=80&w=1080",
     urlSmall: "https://images.unsplash.com/photo-1722197230024-f5bcb12b70c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MDMzMjV8MHwxfHNlYXJjaHwxfHxicmlnaHQlMjBsaWdodCUyQyUyMGxpZ2h0aG91c2UlMkMlMjBzYWx2YXRpb258ZW58MHwwfHx8MTc1NzYyMTc3M3ww&ixlib=rb-4.1.0&q=80&w=800",
     urlFull: "https://images.unsplash.com/photo-1722197230024-f5bcb12b70c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MDMzMjV8MHwxfHNlYXJjaHwxfHxicmlnaHQlMjBsaWdodCUyQyUyMGxpZ2h0aG91c2UlMkMlMjBzYWx2YXRpb258ZW58MHwwfHx8MTc1NzYyMTc3M3ww&ixlib=rb-4.1.0&q=80&w=2400",
