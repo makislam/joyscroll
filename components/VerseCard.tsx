@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { motion, PanInfo } from 'framer-motion'
-import { Heart, ArrowDown, BookOpen, Share2 } from 'lucide-react'
+import { Heart, ArrowDown, BookOpen, Share2, Volume2, VolumeX, Pause, Play } from 'lucide-react'
 import { VerseCardProps } from '@/types'
 import SwipeIndicator from './SwipeIndicator'
 import { shareVerse } from '@/lib/utils'
 import { trackUnsplashDownload, getUnsplashAttribution } from '@/lib/unsplashCompliance'
 import { PsalmImageManager, PsalmImageData } from '../lib/psalmImageManager'
+import { textToSpeech } from '@/lib/textToSpeech'
 
 export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, onReadFullPassage, canGoBack = false }: VerseCardProps) {
   const [isDragging, setIsDragging] = useState(false)
@@ -16,6 +17,11 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
   const [imageLoaded, setImageLoaded] = useState(false)
   const [psalmImage, setPsalmImage] = useState<PsalmImageData | null>(null)
   const [imageLoading, setImageLoading] = useState(false)
+  
+  // Text-to-speech state
+  const [isReading, setIsReading] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [speechSupported, setSpeechSupported] = useState(false)
   
   // Load psalm image dynamically
   useEffect(() => {
@@ -46,6 +52,20 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
       setImageLoading(false)
     }
   }, [verse.psalmNumber, verse.text])
+
+  // Check text-to-speech support
+  useEffect(() => {
+    setSpeechSupported(textToSpeech.isSupported())
+  }, [])
+
+  // Stop speech when verse changes
+  useEffect(() => {
+    return () => {
+      textToSpeech.stop()
+      setIsReading(false)
+      setIsPaused(false)
+    }
+  }, [verse.id])
 
   const cardVariants = {
     initial: { scale: 0.9, opacity: 0 },
@@ -142,6 +162,55 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
     }
   }
 
+  const handleReadAloud = async () => {
+    if (!speechSupported) {
+      alert('Text-to-speech is not supported in your browser.')
+      return
+    }
+
+    try {
+      if (isReading && !isPaused) {
+        // Stop reading
+        textToSpeech.stop()
+        setIsReading(false)
+        setIsPaused(false)
+      } else if (isPaused) {
+        // Resume reading
+        textToSpeech.resume()
+        setIsPaused(false)
+      } else {
+        // Start reading
+        setIsReading(true)
+        setIsPaused(false)
+        
+        await textToSpeech.readVerse({
+          text: verse.text,
+          psalmNumber: verse.psalmNumber,
+          verseNumber: verse.verseNumber
+        })
+        
+        // Reading completed
+        setIsReading(false)
+        setIsPaused(false)
+      }
+    } catch (error) {
+      console.error('Text-to-speech error:', error)
+      setIsReading(false)
+      setIsPaused(false)
+      alert('Unable to read text aloud. Please try again.')
+    }
+  }
+
+  const handlePauseResume = () => {
+    if (isReading && !isPaused) {
+      textToSpeech.pause()
+      setIsPaused(true)
+    } else if (isPaused) {
+      textToSpeech.resume()
+      setIsPaused(false)
+    }
+  }
+
   return (
     <>
       <motion.div
@@ -218,16 +287,53 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
               Psalm {verse.psalmNumber}:{verse.verseNumber}
             </div>
             
-            {/* Share button in top right */}
-            <motion.button
-              variants={buttonVariants}
-              whileTap="tap"
-              onClick={handleShare}
-              className="p-3 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 transition-colors flex-shrink-0"
-              title="Share this verse"
-            >
-              <Share2 size={20} />
-            </motion.button>
+            {/* Action buttons in top right */}
+            <div className="flex space-x-2">
+              {/* Read aloud button */}
+              {speechSupported && (
+                <motion.button
+                  variants={buttonVariants}
+                  whileTap="tap"
+                  onClick={handleReadAloud}
+                  className={`p-3 rounded-full backdrop-blur-sm border transition-colors flex-shrink-0 ${
+                    isReading 
+                      ? 'bg-blue-500/90 border-blue-400/50 text-white' 
+                      : 'bg-white/20 border-white/30 text-white hover:bg-blue-50/30 hover:border-blue-300/50'
+                  }`}
+                  title={isReading ? (isPaused ? 'Resume reading' : 'Stop reading') : 'Read aloud'}
+                >
+                  {isReading ? (
+                    isPaused ? <Play size={20} /> : <VolumeX size={20} />
+                  ) : (
+                    <Volume2 size={20} />
+                  )}
+                </motion.button>
+              )}
+              
+              {/* Pause/Resume button (only show when reading) */}
+              {isReading && (
+                <motion.button
+                  variants={buttonVariants}
+                  whileTap="tap"
+                  onClick={handlePauseResume}
+                  className="p-3 rounded-full bg-blue-500/90 backdrop-blur-sm border border-blue-400/50 text-white hover:bg-blue-600/90 transition-colors flex-shrink-0"
+                  title={isPaused ? 'Resume' : 'Pause'}
+                >
+                  {isPaused ? <Play size={20} /> : <Pause size={20} />}
+                </motion.button>
+              )}
+              
+              {/* Share button */}
+              <motion.button
+                variants={buttonVariants}
+                whileTap="tap"
+                onClick={handleShare}
+                className="p-3 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 transition-colors flex-shrink-0"
+                title="Share this verse"
+              >
+                <Share2 size={20} />
+              </motion.button>
+            </div>
           </motion.div>
           
           {/* Center section - Verse text */}
@@ -238,12 +344,31 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
             transition={{ delay: 0.3 }}
           >
             <div 
-              className="verse-text-container max-h-full overflow-y-auto w-full flex items-center justify-center scrollbar-hide"
+              className="verse-text-container max-h-full overflow-y-auto w-full flex items-center justify-center scrollbar-hide relative"
               onPointerDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
               style={{ touchAction: 'pan-y' }}
             >
-              <p className="verse-text text-center text-xl sm:text-2xl md:text-3xl leading-relaxed text-white drop-shadow-lg font-light max-w-lg py-4">
+              {/* Reading indicator */}
+              {isReading && (
+                <motion.div
+                  className="absolute -top-2 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-blue-500/80 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  <motion.div
+                    className="w-2 h-2 bg-white rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                  />
+                  <span>{isPaused ? 'Paused' : 'Reading aloud...'}</span>
+                </motion.div>
+              )}
+              
+              <p className={`verse-text text-center text-xl sm:text-2xl md:text-3xl leading-relaxed text-white drop-shadow-lg font-light max-w-lg py-4 transition-all duration-300 ${
+                isReading ? 'scale-105' : ''
+              }`}>
                 "{verse.text}"
               </p>
             </div>

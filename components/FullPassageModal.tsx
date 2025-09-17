@@ -1,9 +1,10 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useEffect, useRef } from 'react'
-import { X, Heart, Share2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { X, Heart, Share2, Volume2, VolumeX, Pause, Play } from 'lucide-react'
 import { psalmsData } from '@/data/psalms'
+import { textToSpeech } from '@/lib/textToSpeech'
 
 interface FullPassageModalProps {
   isOpen: boolean
@@ -28,6 +29,11 @@ export default function FullPassageModal({
 }: FullPassageModalProps) {
   const psalm = psalmsData.find(p => p.number === psalmNumber)
   const currentVerseRef = useRef<HTMLDivElement>(null)
+  
+  // Text-to-speech state
+  const [isReading, setIsReading] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [speechSupported, setSpeechSupported] = useState(false)
 
   // Scroll to current verse when modal opens
   useEffect(() => {
@@ -40,6 +46,78 @@ export default function FullPassageModal({
       }, 300) // Delay to allow modal animation to complete
     }
   }, [isOpen, currentVerseNumber])
+
+  // Check text-to-speech support and cleanup
+  useEffect(() => {
+    setSpeechSupported(textToSpeech.isSupported())
+    
+    return () => {
+      textToSpeech.stop()
+      setIsReading(false)
+      setIsPaused(false)
+    }
+  }, [])
+
+  // Stop reading when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      textToSpeech.stop()
+      setIsReading(false)
+      setIsPaused(false)
+    }
+  }, [isOpen])
+
+  const handleReadFullPassage = async () => {
+    if (!psalm || !speechSupported) return
+
+    try {
+      if (isReading && !isPaused) {
+        // Stop reading
+        textToSpeech.stop()
+        setIsReading(false)
+        setIsPaused(false)
+      } else if (isPaused) {
+        // Resume reading
+        textToSpeech.resume()
+        setIsPaused(false)
+      } else {
+        // Start reading the full passage
+        setIsReading(true)
+        setIsPaused(false)
+        
+        const versesToRead = showingFullChapter ? psalm.verses : psalm.verses.slice(0, 3)
+        const fullText = versesToRead.map((verse, index) => 
+          `Verse ${verse.verseNumber}. ${verse.text}`
+        ).join('. ')
+        
+        const introText = `${psalm.title}. ${fullText}`
+        
+        await textToSpeech.speak(introText, {
+          rate: 0.9, // Slightly slower for longer passages but still natural
+          pitch: 1.0,
+          volume: 0.9
+        })
+        
+        // Reading completed
+        setIsReading(false)
+        setIsPaused(false)
+      }
+    } catch (error) {
+      console.error('Text-to-speech error:', error)
+      setIsReading(false)
+      setIsPaused(false)
+    }
+  }
+
+  const handlePauseResume = () => {
+    if (isReading && !isPaused) {
+      textToSpeech.pause()
+      setIsPaused(true)
+    } else if (isPaused) {
+      textToSpeech.resume()
+      setIsPaused(false)
+    }
+  }
 
   if (!isOpen || !psalm) return null
 
@@ -63,8 +141,48 @@ export default function FullPassageModal({
           <div>
             <h2 className="text-xl font-semibold text-slate-800">Psalm {psalm.number}</h2>
             <p className="text-sm text-slate-600 mt-1">{psalm.title}</p>
+            {isReading && (
+              <div className="flex items-center space-x-2 mt-2 text-blue-600 text-sm">
+                <motion.div
+                  className="w-2 h-2 bg-blue-600 rounded-full"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                />
+                <span>{isPaused ? 'Reading paused' : 'Reading aloud...'}</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center space-x-3">
+            {/* Read aloud button */}
+            {speechSupported && (
+              <button 
+                onClick={handleReadFullPassage}
+                className={`p-2 rounded-full transition-colors ${
+                  isReading 
+                    ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' 
+                    : 'hover:bg-slate-100 text-slate-600 hover:text-blue-600'
+                }`}
+                title={isReading ? (isPaused ? 'Resume reading' : 'Stop reading') : 'Read passage aloud'}
+              >
+                {isReading ? (
+                  isPaused ? <Play className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />
+                ) : (
+                  <Volume2 className="w-5 h-5" />
+                )}
+              </button>
+            )}
+            
+            {/* Pause/Resume button (only show when reading) */}
+            {isReading && (
+              <button 
+                onClick={handlePauseResume}
+                className="p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                title={isPaused ? 'Resume' : 'Pause'}
+              >
+                {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+              </button>
+            )}
+            
             <button className="p-2 rounded-full hover:bg-slate-100 text-red-500 transition-colors">
               <Heart className="w-5 h-5" />
             </button>

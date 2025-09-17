@@ -12,6 +12,7 @@ import { psalmsData } from '@/data/psalms'
 import { Verse } from '@/types'
 import { saveLikedVerses, loadLikedVerses, saveRecentlyShown, loadRecentlyShown, clearLikedVerses } from '@/lib/storage'
 import { getQualityVerses, getWeightedRandomVerse } from '@/lib/verseSelection'
+import { textToSpeech } from '@/lib/textToSpeech'
 
 export default function Home() {
   const [currentVerse, setCurrentVerse] = useState<Verse | null>(null)
@@ -59,6 +60,16 @@ export default function Home() {
       } else if (event.key === 'ArrowDown') {
         event.preventDefault()
         goToPreviousVerse() // Backward navigation
+      } else if (event.key === 'r' || event.key === 'R') {
+        event.preventDefault()
+        // Trigger read aloud for current verse
+        if (currentVerse && textToSpeech.isSupported()) {
+          textToSpeech.readVerse({
+            text: currentVerse.text,
+            psalmNumber: currentVerse.psalmNumber,
+            verseNumber: currentVerse.verseNumber
+          }).catch(console.error)
+        }
       }
     }
 
