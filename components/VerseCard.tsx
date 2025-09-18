@@ -201,16 +201,6 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
     }
   }
 
-  const handlePauseResume = () => {
-    if (isReading && !isPaused) {
-      textToSpeech.pause()
-      setIsPaused(true)
-    } else if (isPaused) {
-      textToSpeech.resume()
-      setIsPaused(false)
-    }
-  }
-
   return (
     <>
       <motion.div
@@ -275,7 +265,7 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
         <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/20 to-black/40 pointer-events-none" />
         
         {/* Main content container - Instagram reel style */}
-        <div className="relative z-10 h-full flex flex-col justify-between p-4 sm:p-6 min-h-0">
+        <div className="relative z-10 h-full flex flex-col justify-between p-4 pb-6 sm:p-6 sm:pb-8 min-h-0">
           {/* Top section - Psalm reference */}
           <motion.div 
             className="flex justify-between items-start flex-shrink-0"
@@ -310,19 +300,6 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
                 </motion.button>
               )}
               
-              {/* Pause/Resume button (only show when reading) */}
-              {isReading && (
-                <motion.button
-                  variants={buttonVariants}
-                  whileTap="tap"
-                  onClick={handlePauseResume}
-                  className="p-3 rounded-full bg-blue-500/90 backdrop-blur-sm border border-blue-400/50 text-white hover:bg-blue-600/90 transition-colors flex-shrink-0"
-                  title={isPaused ? 'Resume' : 'Pause'}
-                >
-                  {isPaused ? <Play size={20} /> : <Pause size={20} />}
-                </motion.button>
-              )}
-              
               {/* Share button */}
               <motion.button
                 variants={buttonVariants}
@@ -349,23 +326,6 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
               onTouchStart={(e) => e.stopPropagation()}
               style={{ touchAction: 'pan-y' }}
             >
-              {/* Reading indicator */}
-              {isReading && (
-                <motion.div
-                  className="absolute -top-2 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-blue-500/80 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm"
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  <motion.div
-                    className="w-2 h-2 bg-white rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                  />
-                  <span>{isPaused ? 'Paused' : 'Reading aloud...'}</span>
-                </motion.div>
-              )}
-              
               <p className={`verse-text text-center text-xl sm:text-2xl md:text-3xl leading-relaxed text-white drop-shadow-lg font-light max-w-lg py-4 transition-all duration-300 ${
                 isReading ? 'scale-105' : ''
               }`}>
