@@ -45,11 +45,23 @@ export class TextToSpeechManager {
       (voice: SpeechSynthesisVoice) => 
         voice.lang.includes('en-GB') && voice.name.toLowerCase().includes('male'),
       
-      // Any British voice
+      // More aggressive British voice search - look for common British voice names
+      (voice: SpeechSynthesisVoice) => 
+        voice.lang.includes('en-GB') && 
+        (voice.name.includes('Daniel') || voice.name.includes('Oliver') || 
+         voice.name.includes('Arthur') || voice.name.includes('Harry') ||
+         voice.name.includes('James') || voice.name.includes('William')),
+      
+      // Any British voice at all
       (voice: SpeechSynthesisVoice) => 
         voice.lang.includes('en-GB'),
       
-      // US English Neural/Premium voices as fallback
+      // UK voices without the hyphen
+      (voice: SpeechSynthesisVoice) => 
+        voice.lang.includes('en_GB') || voice.lang.toLowerCase().includes('british') || 
+        voice.lang.toLowerCase().includes('uk'),
+      
+      // US English Neural/Premium voices as fallback (but make them sound more British)
       (voice: SpeechSynthesisVoice) => 
         voice.lang.includes('en-US') && (voice.name.toLowerCase().includes('neural') || voice.name.toLowerCase().includes('premium')),
       
@@ -65,6 +77,9 @@ export class TextToSpeechManager {
       (voice: SpeechSynthesisVoice) => 
         voice.lang.includes('en')
     ]
+
+    // Debug: Log all available voices
+    console.log('Available voices:', this.voices.map(v => ({ name: v.name, lang: v.lang })))
 
     for (const preference of voicePreferences) {
       const foundVoice = this.voices.find(preference)
@@ -313,6 +328,41 @@ export class TextToSpeechManager {
       console.log('Fully enhanced:', this.enhanceTextForNaturalSpeech(text))
       console.log('---')
     })
+  }
+
+  // Force reload voices and reselect British voice
+  forceReloadVoices(): void {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      // Force browser to reload voices
+      speechSynthesis.getVoices()
+      
+      // Wait a bit for voices to load, then reload our selection
+      setTimeout(() => {
+        this.loadVoices()
+        console.log('Voices reloaded. Selected voice:', this.getSelectedVoice())
+      }, 100)
+    }
+  }
+
+  // Manually set a specific voice by name
+  setVoiceByName(voiceName: string): boolean {
+    const voice = this.voices.find(v => v.name.includes(voiceName))
+    if (voice) {
+      this.bestBritishMaleVoice = voice
+      console.log('Manually set voice to:', voice.name, voice.lang)
+      return true
+    }
+    console.log('Voice not found:', voiceName)
+    return false
+  }
+
+  // List all British voices available
+  getBritishVoices(): Array<{ name: string; lang: string }> {
+    return this.voices
+      .filter(voice => voice.lang.includes('en-GB') || voice.lang.includes('en_GB') || 
+                      voice.lang.toLowerCase().includes('british') || 
+                      voice.lang.toLowerCase().includes('uk'))
+      .map(voice => ({ name: voice.name, lang: voice.lang }))
   }
 }
 
