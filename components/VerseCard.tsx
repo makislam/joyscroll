@@ -215,7 +215,7 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         whileDrag={{ scale: 0.98, rotateX: 2 }}
-        className={`verse-card-reel mx-2 my-4 relative overflow-hidden select-none ${
+        className={`verse-card-reel mx-2 mt-4 mb-8 relative overflow-hidden select-none ${
           isDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
         style={{ touchAction: 'pan-y' }}
