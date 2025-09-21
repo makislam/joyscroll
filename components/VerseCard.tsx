@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, PanInfo } from 'framer-motion'
-import { Heart, ArrowDown, BookOpen, Share2, Volume2, VolumeX, Pause, Play } from 'lucide-react'
+import { Heart, ArrowDown, BookOpen, Share2, Volume2, VolumeX, Pause, Play, RotateCcw, Timer } from 'lucide-react'
 import { VerseCardProps } from '@/types'
 import SwipeIndicator from './SwipeIndicator'
 import { shareVerse } from '@/lib/utils'
@@ -22,6 +22,44 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
   const [isReading, setIsReading] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [speechSupported, setSpeechSupported] = useState(false)
+  
+  // Autoscroll state
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(false)
+  const [autoScrollCountdown, setAutoScrollCountdown] = useState(0)
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false)
+  const autoScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // TTS audio state (separate from autoscroll timing)
+  const [audioEnabled, setAudioEnabled] = useState(false)
+  
+  // Autoscroll settings
+  const AUTOSCROLL_DELAY = 5000 // 5 seconds delay after TTS completion or verse display
+  
+  // Calculate reading duration based on text length (words per minute)
+  const calculateReadingDuration = (text: string): number => {
+    const wordsPerMinute = 150 // Average reading speed
+    const words = text.trim().split(/\s+/).length
+    const readingTimeMinutes = words / wordsPerMinute
+    const readingTimeMs = readingTimeMinutes * 60 * 1000
+    // Add a minimum of 2 seconds and maximum of 15 seconds
+    return Math.max(2000, Math.min(15000, readingTimeMs))
+  }
+
+  // Load autoscroll and audio preferences from localStorage on mount
+  useEffect(() => {
+    const savedAutoScroll = localStorage.getItem('joyscroll-autoscroll-enabled')
+    const savedAudioEnabled = localStorage.getItem('joyscroll-audio-enabled')
+    if (savedAutoScroll === 'true') {
+      setAutoScrollEnabled(true)
+    }
+    if (savedAudioEnabled === 'true') {
+      setAudioEnabled(true)
+    }
+    
+    // Force British voice selection on component mount
+    textToSpeech.forceBritishVoice()
+  }, [])
   
   // Load psalm image dynamically
   useEffect(() => {
@@ -64,8 +102,150 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
       textToSpeech.stop()
       setIsReading(false)
       setIsPaused(false)
+      clearAutoScrollTimers()
     }
   }, [verse.id])
+
+  // Autoscroll effect - start countdown when verse changes or TTS completes
+  useEffect(() => {
+    if (autoScrollEnabled && !isReading && !isDragging) {
+      startAutoScrollCountdown()
+    } else {
+      clearAutoScrollTimers()
+    }
+    
+    return clearAutoScrollTimers
+  }, [autoScrollEnabled, isReading, isDragging, verse.id])
+
+  // Clear autoscroll timers helper
+  const clearAutoScrollTimers = () => {
+    if (autoScrollTimeoutRef.current) {
+      clearTimeout(autoScrollTimeoutRef.current)
+      autoScrollTimeoutRef.current = null
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current)
+      countdownIntervalRef.current = null
+    }
+    setAutoScrollCountdown(0)
+    setIsAutoScrolling(false)
+  }
+
+  // Start autoscroll countdown based on reading duration
+  const startAutoScrollCountdown = () => {
+    clearAutoScrollTimers()
+    setIsAutoScrolling(true)
+    
+    // Calculate how long it would take to read this verse
+    const readingDuration = calculateReadingDuration(verse.text)
+    
+    // If audio is enabled, handle TTS
+    if (audioEnabled && speechSupported) {
+      if (isReading) {
+        // Audio is already playing - just wait for it to complete and advance
+        console.log('Audio already playing - autoscroll will advance when TTS completes')
+        // The autoscroll will be triggered after current TTS completes (handled in handleReadAloud)
+        return
+      } else {
+        // Start new TTS
+        console.log('Starting audio for autoscroll - TTS will handle advancing to next verse')
+        handleReadAloud()
+        // The autoscroll will be triggered after TTS completes (handled in handleReadAloud)
+        return
+      }
+    }
+    
+    // If audio is off, wait for the calculated reading duration then advance
+    console.log('Starting silent autoscroll countdown for', Math.ceil(readingDuration / 1000), 'seconds')
+    setAutoScrollCountdown(Math.ceil(readingDuration / 1000)) // Convert to seconds for display
+    
+    // Update countdown every second
+    countdownIntervalRef.current = setInterval(() => {
+      setAutoScrollCountdown(prev => {
+        if (prev <= 1) {
+          clearAutoScrollTimers()
+          onNext() // Auto advance to next verse
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    // Set main timeout
+    autoScrollTimeoutRef.current = setTimeout(() => {
+      clearAutoScrollTimers()
+      onNext()
+    }, readingDuration)
+  }
+
+  // Toggle autoscroll
+  const toggleAutoScroll = () => {
+    const newValue = !autoScrollEnabled
+    setAutoScrollEnabled(newValue)
+    
+    // Save preference to localStorage
+    localStorage.setItem('joyscroll-autoscroll-enabled', newValue.toString())
+    
+    if (autoScrollEnabled) {
+      clearAutoScrollTimers() // Stop any active countdown when disabling
+    }
+  }
+
+  // Toggle audio on/off (affects whether TTS plays, but timing stays the same)
+  const toggleAudio = () => {
+    const newValue = !audioEnabled
+    console.log('toggleAudio called, changing from', audioEnabled, 'to', newValue)
+    setAudioEnabled(newValue)
+    
+    // Save preference to localStorage
+    localStorage.setItem('joyscroll-audio-enabled', newValue.toString())
+    
+    if (newValue) {
+      // Enabling audio - debug voices and try to find better one
+      textToSpeech.debugVoices()
+      
+      // If not currently reading, start reading this verse
+      console.log('Enabling audio, isReading:', isReading, 'speechSupported:', speechSupported)
+      if (!isReading && speechSupported) {
+        console.log('Calling handleReadAloud from toggleAudio')
+        handleReadAloud()
+      }
+    } else {
+      // Disabling audio - stop current TTS if playing
+      if (isReading) {
+        console.log('Disabling audio and stopping TTS')
+        textToSpeech.stop()
+        setIsReading(false)
+        setIsPaused(false)
+        
+        // If autoscroll was active, continue with silent countdown
+        if (autoScrollEnabled && isAutoScrolling) {
+          console.log('Continuing autoscroll in silent mode after stopping audio')
+          // Calculate remaining time and continue with silent countdown
+          const readingDuration = calculateReadingDuration(verse.text)
+          setAutoScrollCountdown(Math.ceil(readingDuration / 1000))
+          
+          // Update countdown every second
+          countdownIntervalRef.current = setInterval(() => {
+            setAutoScrollCountdown(prev => {
+              if (prev <= 1) {
+                clearAutoScrollTimers()
+                onNext()
+                return 0
+              }
+              return prev - 1
+            })
+          }, 1000)
+
+          // Set main timeout
+          autoScrollTimeoutRef.current = setTimeout(() => {
+            clearAutoScrollTimers()
+            onNext()
+          }, readingDuration)
+        }
+      }
+    }
+  }
 
   const cardVariants = {
     initial: { scale: 0.9, opacity: 0 },
@@ -163,41 +343,88 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
   }
 
   const handleReadAloud = async () => {
+    console.log('=== handleReadAloud called ===')
+    console.log('speechSupported:', speechSupported)
+    console.log('audioEnabled:', audioEnabled)
+    console.log('isReading:', isReading)
+    console.log('isAutoScrolling:', isAutoScrolling)
+    
     if (!speechSupported) {
-      alert('Text-to-speech is not supported in your browser.')
+      console.warn('Speech synthesis not supported')
       return
     }
 
     try {
       if (isReading && !isPaused) {
         // Stop reading
+        console.log('Stopping TTS')
         textToSpeech.stop()
         setIsReading(false)
         setIsPaused(false)
-      } else if (isPaused) {
+        return
+      } 
+      
+      if (isPaused) {
         // Resume reading
+        console.log('Resuming TTS')
         textToSpeech.resume()
         setIsPaused(false)
-      } else {
-        // Start reading
-        setIsReading(true)
-        setIsPaused(false)
-        
+        return
+      }
+      
+      // Start reading
+      console.log('Starting TTS for verse:', verse.psalmNumber + ':' + verse.verseNumber)
+      setIsReading(true)
+      setIsPaused(false)
+      
+      // Simple approach - just call the TTS and handle completion
+      try {
         await textToSpeech.readVerse({
           text: verse.text,
           psalmNumber: verse.psalmNumber,
           verseNumber: verse.verseNumber
         })
         
-        // Reading completed
+        console.log('✅ TTS completed successfully')
+        
+        // Reading completed successfully
         setIsReading(false)
         setIsPaused(false)
+        
+        // If autoscroll is enabled, advance to next verse
+        if (autoScrollEnabled && isAutoScrolling) {
+          console.log('📱 Auto-advancing to next verse after TTS completion')
+          clearAutoScrollTimers()
+          onNext()
+        }
+        
+      } catch (ttsError) {
+        console.error('❌ TTS Error:', ttsError)
+        setIsReading(false)
+        setIsPaused(false)
+        
+        // Different error handling based on context
+        if (isAutoScrolling) {
+          console.log('🔄 TTS failed during autoscroll - continuing silently')
+          // Continue autoscroll in silent mode
+          const readingDuration = calculateReadingDuration(verse.text)
+          setTimeout(() => {
+            if (autoScrollEnabled && isAutoScrolling) {
+              clearAutoScrollTimers()
+              onNext()
+            }
+          }, readingDuration)
+        } else {
+          // Manual TTS - show error but don't crash
+          console.log('⚠️ Manual TTS failed')
+          // Don't show alert - just log the error
+        }
       }
-    } catch (error) {
-      console.error('Text-to-speech error:', error)
+      
+    } catch (outerError) {
+      console.error('❌ Outer handleReadAloud error:', outerError)
       setIsReading(false)
       setIsPaused(false)
-      alert('Unable to read text aloud. Please try again.')
     }
   }
 
@@ -279,26 +506,56 @@ export default function VerseCard({ verse, isLiked, onLike, onNext, onPrevious, 
             
             {/* Action buttons in top right */}
             <div className="flex space-x-2">
-              {/* Read aloud button */}
+              {/* Audio toggle button */}
               {speechSupported && (
                 <motion.button
                   variants={buttonVariants}
                   whileTap="tap"
-                  onClick={handleReadAloud}
-                  className={`p-3 rounded-full backdrop-blur-sm border transition-colors flex-shrink-0 ${
-                    isReading 
+                  onClick={toggleAudio}
+                  className={`p-3 rounded-full backdrop-blur-sm border transition-colors flex-shrink-0 relative ${
+                    audioEnabled 
                       ? 'bg-blue-500/90 border-blue-400/50 text-white' 
                       : 'bg-white/20 border-white/30 text-white hover:bg-blue-50/30 hover:border-blue-300/50'
                   }`}
-                  title={isReading ? (isPaused ? 'Resume reading' : 'Stop reading') : 'Read aloud'}
+                  title={audioEnabled ? 'Disable audio (silent reading mode)' : 'Enable audio (read aloud mode)'}
                 >
-                  {isReading ? (
-                    isPaused ? <Play size={20} /> : <VolumeX size={20} />
-                  ) : (
-                    <Volume2 size={20} />
+                  {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                  {/* Audio playing indicator */}
+                  {isReading && audioEnabled && (
+                    <motion.div
+                      className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.5 }}
+                    />
                   )}
                 </motion.button>
               )}
+              
+              {/* Autoscroll toggle button */}
+              <motion.button
+                variants={buttonVariants}
+                whileTap="tap"
+                onClick={toggleAutoScroll}
+                className={`p-3 rounded-full backdrop-blur-sm border transition-colors flex-shrink-0 relative ${
+                  autoScrollEnabled 
+                    ? 'bg-green-500/90 border-green-400/50 text-white' 
+                    : 'bg-white/20 border-white/30 text-white hover:bg-green-50/30 hover:border-green-300/50'
+                }`}
+                title={autoScrollEnabled ? 'Disable autoscroll' : 'Enable autoscroll'}
+              >
+                <Timer size={20} />
+                {/* Autoscroll countdown indicator */}
+                {isAutoScrolling && autoScrollCountdown > 0 && (
+                  <motion.div
+                    className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                  >
+                    {autoScrollCountdown}
+                  </motion.div>
+                )}
+              </motion.button>
               
               {/* Share button */}
               <motion.button
